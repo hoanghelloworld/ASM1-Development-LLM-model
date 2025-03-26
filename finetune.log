@@ -1,0 +1,10 @@
+args: {'train': 'data/sst-train.txt', 'dev': 'data/sst-dev.txt', 'test': 'data/sst-test.txt', 'label_names': 'data/sst-label-mapping.json', 'pretrained_model_path': 'stories42M.pt', 'max_sentence_len': None, 'seed': 1337, 'epochs': 1, 'option': 'finetune', 'use_gpu': True, 'generated_sentence_low_temp_out': 'generated-sentence-temp-0.txt', 'generated_sentence_high_temp_out': 'generated-sentence-temp-1.txt', 'dev_out': 'sst-dev-finetuning-output.txt', 'test_out': 'sst-test-finetuning-output.txt', 'batch_size': 8, 'hidden_dropout_prob': 0.3, 'lr': 2e-05}
+load 8544 data from data/sst-train.txt
+load 1101 data from data/sst-dev.txt
+save the model to finetune-1-2e-05.pt
+epoch 0: train loss :: 1.696, train acc :: 0.412, dev acc :: 0.391
+load model from finetune-1-2e-05.pt
+load 1101 data from data/sst-dev.txt
+load 2210 data from data/sst-test.txt
+dev acc :: 0.391
+test acc :: 0.390
