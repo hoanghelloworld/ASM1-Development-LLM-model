@@ -38,23 +38,42 @@ class AdamW(Optimizer):
                 if grad.is_sparse:
                     raise RuntimeError("Adam does not support sparse gradients, please consider SparseAdam instead")
 
-                raise NotImplementedError()
-
                 # State should be stored in this dictionary
                 state = self.state[p]
-
+                if len(state) == 0:
+                    state["step"] = 0
+                    state["exp_avg"] = torch.zeros_like(p.data)
+                    state["exp_avg_sq"] = torch.zeros_like(p.data)
                 # Access hyperparameters from the `group` dictionary
                 alpha = group["lr"]
-
+                weight_decay = group["weight_decay"]
+                beta1, beta2 = group["betas"]
+                eps = group["eps"]
+                correct_bias = group["correct_bias"]
                 # Update first and second moments of the gradients
+                state["step"] += 1
 
+                if weight_decay != 0:
+                    grad = grad.add(p.data, alpha=weight_decay)
+
+                exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
+                exp_avg.mul_(beta1).add_(grad, alpha=1.0 - beta1)
+                exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1.0 - beta2)
                 # Bias correction
                 # Please note that we are using the "efficient version" given in
                 # https://arxiv.org/abs/1412.6980
+                if correct_bias:
+                    bias_correction1 = 1.0 - beta1 ** state["step"]
+                    bias_correction2 = 1.0 - beta2 ** state["step"]
 
+                    step_size = alpha * (bias_correction2 ** 0.5) / bias_correction1
+                else:
+                    step_size = alpha
                 # Update parameters
-
+                denimunator = (exp_avg_sq.sqrt().add_(eps))
+                p.data.addcdiv_(exp_avg, denimunator, value=-step_size)
                 # Add weight decay after the main gradient-based updates.
                 # Please note that the learning rate should be incorporated into this update.
-
+                if weight_decay != 0:
+                    p.data.add_(p.data, alpha=-alpha * weight_decay)
         return loss
