@@ -40,40 +40,45 @@ class AdamW(Optimizer):
 
                 # State should be stored in this dictionary
                 state = self.state[p]
+
+                # Initialize state if it doesn't exist
                 if len(state) == 0:
                     state["step"] = 0
                     state["exp_avg"] = torch.zeros_like(p.data)
                     state["exp_avg_sq"] = torch.zeros_like(p.data)
+
                 # Access hyperparameters from the `group` dictionary
                 alpha = group["lr"]
-                weight_decay = group["weight_decay"]
                 beta1, beta2 = group["betas"]
                 eps = group["eps"]
+                weight_decay = group["weight_decay"]
                 correct_bias = group["correct_bias"]
+
                 # Update first and second moments of the gradients
                 state["step"] += 1
-
-                if weight_decay != 0:
-                    grad = grad.add(p.data, alpha=weight_decay)
-
                 exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
+                
+                # Update biased first moment estimate (m_t)
                 exp_avg.mul_(beta1).add_(grad, alpha=1.0 - beta1)
+                # Update biased second moment estimate (v_t)
                 exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1.0 - beta2)
+
                 # Bias correction
-                # Please note that we are using the "efficient version" given in
-                # https://arxiv.org/abs/1412.6980
+                # Efficient version from Kigma & Ba (2014)
                 if correct_bias:
                     bias_correction1 = 1.0 - beta1 ** state["step"]
                     bias_correction2 = 1.0 - beta2 ** state["step"]
-
                     step_size = alpha * (bias_correction2 ** 0.5) / bias_correction1
                 else:
                     step_size = alpha
+                
                 # Update parameters
-                denimunator = (exp_avg_sq.sqrt().add_(eps))
-                p.data.addcdiv_(exp_avg, denimunator, value=-step_size)
-                # Add weight decay after the main gradient-based updates.
-                # Please note that the learning rate should be incorporated into this update.
+                denom = (exp_avg_sq.sqrt() + eps)
+                p.data.addcdiv_(exp_avg, denom, value=-step_size)
+                
+                # Add weight decay after the main gradient-based updates
+                # with learning rate incorporated
                 if weight_decay != 0:
                     p.data.add_(p.data, alpha=-alpha * weight_decay)
+
         return loss
