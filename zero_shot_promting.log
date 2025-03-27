@@ -1,0 +1,6 @@
+args: {'train': 'data/sst-train.txt', 'dev': 'data/sst-dev.txt', 'test': 'data/sst-test.txt', 'label_names': 'data/sst-label-mapping.json', 'pretrained_model_path': 'stories42M.pt', 'max_sentence_len': None, 'seed': 1337, 'epochs': 5, 'option': 'prompt', 'use_gpu': True, 'generated_sentence_low_temp_out': 'generated-sentence-temp-0.txt', 'generated_sentence_high_temp_out': 'generated-sentence-temp-1.txt', 'dev_out': 'sst-dev-prompting-output.txt', 'test_out': 'sst-test-prompting-output.txt', 'batch_size': 10, 'hidden_dropout_prob': 0.3, 'lr': 2e-05}
+load 8544 data from data/sst-train.txt
+load 1101 data from data/sst-dev.txt
+load 2210 data from data/sst-test.txt
+dev acc :: 0.214
+test acc :: 0.223

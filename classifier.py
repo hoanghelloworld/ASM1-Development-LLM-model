@@ -70,4 +70,5 @@ class LlamaEmbeddingClassifier(torch.nn.Module):
 		# Apply log softmax to get log probabilities
 		log_probs = F.log_softmax(logits, dim=-1)
 		
+
 		return log_probs
