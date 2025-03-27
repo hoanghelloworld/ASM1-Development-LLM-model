@@ -63,13 +63,41 @@ def apply_rotary_emb(
 
     # First, compute the trigonometric values in the second and fourth columns in
     # slide 22 (linked above).
-
-    # Then, combine these trigonometric values with the tensors query_real, query_imag,
-    # key_real, and key_imag.
-
-    raise NotImplementedError
-
-    query_out = None
-    key_out = None
+    
+    # Generate position indices for each token in the sequence
+    seq_len = query.shape[1]
+    positions = torch.arange(seq_len, device=device).float().unsqueeze(1)  # [seq_len, 1]
+    
+    # Generate frequency bands
+    dim = head_dim // 2
+    freq = 1.0 / (theta ** (torch.arange(0, dim, device=device).float() / dim))  # [dim/2]
+    
+    # Compute sinusoids and cosines for each position
+    freqs = positions @ freq.unsqueeze(0)  # [seq_len, dim/2]
+    cos = torch.cos(freqs)  # [seq_len, dim/2]
+    sin = torch.sin(freqs)  # [seq_len, dim/2]
+    
+    # Reshape for broadcasting
+    cos = cos.unsqueeze(0).unsqueeze(2)  # [1, seq_len, 1, dim/2]
+    sin = sin.unsqueeze(0).unsqueeze(2)  # [1, seq_len, 1, dim/2]
+    
+    # Apply rotation to query and key
+    # For complex number multiplication (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+    
+    # Rotate query
+    query_out_real = query_real * cos - query_imag * sin
+    query_out_imag = query_real * sin + query_imag * cos
+    
+    # Rotate key
+    key_out_real = key_real * cos - key_imag * sin
+    key_out_imag = key_real * sin + key_imag * cos
+    
+    # Combine real and imaginary parts back to the original shape
+    query_out = torch.cat([query_out_real.unsqueeze(-1), query_out_imag.unsqueeze(-1)], dim=-1)
+    query_out = query_out.reshape(query.shape).type_as(query)
+    
+    key_out = torch.cat([key_out_real.unsqueeze(-1), key_out_imag.unsqueeze(-1)], dim=-1)
+    key_out = key_out.reshape(key.shape).type_as(key)
+    
     # Return the rotary position embeddings for the query and key tensors
     return query_out, key_out
